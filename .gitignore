@@ -2,6 +2,8 @@ logs/
 trades/
 hist_data/
 chart.png
+.vscode
+sandbox.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
