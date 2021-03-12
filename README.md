@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-# skalpit
-=======
-Skalpit - a directional trading bot
+# Skalpit - a directional trading bot
 
 ```
 sudo apt-get update
@@ -22,5 +19,3 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
-
->>>>>>> bf21725 (ready to run)
