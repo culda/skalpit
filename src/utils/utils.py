@@ -1,4 +1,3 @@
-from constants import *
 import json
 import logging
 import dateparser
@@ -6,6 +5,8 @@ import pytz
 from decimal import Decimal
 from datetime import datetime
 from pandas import Series
+
+from src.utils.constants import *
 
 def get_logger(logger, fname, level = logging.INFO):
     fh = logging.FileHandler(fname)

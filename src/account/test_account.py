@@ -1,6 +1,7 @@
-from account import Account
 import logging
-from utils import get_logger, timestamp_to_date, sameday, percent, date_to_seconds
+
+from src.account.account import Account
+from src.utils.utils import get_logger, timestamp_to_date, sameday, percent, date_to_seconds
 
 logger = get_logger(logging.getLogger(__name__), 'logs/test-account.log', logging.DEBUG)
 

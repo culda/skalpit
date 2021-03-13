@@ -2,14 +2,13 @@ import os
 import pandas as pd
 import time
 from datetime import datetime
-
-from constants import PATH_HIST_KLINES
-from test_account import TestAccount
-from chart import Chart
-from engine import Engine
-
-from utils import get_logger, interval_bybit_notation, date_to_seconds
 import logging
+
+from src.utils.constants import PATH_HIST_KLINES
+from src.account.test_account import TestAccount
+from src.utils.chart import Chart
+from src.engine.engine import Engine
+from src.utils.utils import get_logger, interval_bybit_notation, date_to_seconds
 
 logger = get_logger(logging.getLogger(__name__), 'logs/backtester.log', logging.DEBUG)
 
@@ -92,12 +91,10 @@ class Backtester(Engine):
         :type intervals: []
         :return: dict of pandas Dataframes, containing OHLCV values
         """    
-        dirname = os.path.dirname(__file__)
-
         result = {}
 
         for interval in intervals:
-            filename = os.path.join(dirname, PATH_HIST_KLINES[interval])
+            filename = PATH_HIST_KLINES[interval]
             file_klines = pd.read_csv(filename, index_col=0, names = ["Open","High","Low","Close","Volume","TurnOver","Date"])
             file_klines.loc[:,'Date'] = [datetime.fromtimestamp(i).strftime('%Y-%m-%d %H:%M:%S.%d')[:-3] for i in file_klines.index]
 
