@@ -5,10 +5,10 @@ import pandas as pd
 import pandas_ta as ta
 from datetime import datetime
 
-from indicators import calc_indi
-from utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds
-from live_account import LiveAccount
-from engine import Engine
+from src.utils.indicators import calc_indi
+from src.utils.utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds
+from src.account.live_account import LiveAccount
+from src.engine.engine import Engine
 
 logger = get_logger(logging.getLogger(__name__), 'logs/skalpit.log', logging.DEBUG)
 

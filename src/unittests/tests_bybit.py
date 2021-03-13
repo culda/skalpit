@@ -2,8 +2,8 @@ import unittest
 
 class TestBybit(unittest.TestCase):
     def setUp(self):
-        from constants import BYBIT_PUBLIC_TRADE, BYBIT_SECRET_TRADE
-        from bybit import Bybit
+        from src.utils.constants import BYBIT_PUBLIC_TRADE, BYBIT_SECRET_TRADE
+        from src.engine.bybit import Bybit
         from collections import deque
 
         self.bybit = Bybit(BYBIT_PUBLIC_TRADE, BYBIT_SECRET_TRADE, "BTCUSD", ws = True, test = True, callback = lambda topic, data: None)

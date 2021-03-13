@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from bybit import Bybit
-from indicators import calc_indi
-from utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds, interval_bybit_notation
+from src.engine.bybit import Bybit
+from src.utils.indicators import calc_indi
+from src.utils.utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds, interval_bybit_notation
 
 class Engine():
 
