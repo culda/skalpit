@@ -1,9 +1,10 @@
-from account import Account
 import logging
 import json
 import time
 
-from utils import get_logger, timestamp_to_date, sameday, percent, date_to_seconds
+from src.account.account import Account
+from src.utils.utils import get_logger, timestamp_to_date, sameday, percent, date_to_seconds
+
 logger = get_logger(logging.getLogger(__name__), 'logs/live-account.log', logging.DEBUG)
 
 class LiveAccount(Account):
@@ -55,7 +56,7 @@ class LiveAccount(Account):
                 self.orders[oid]['leaves'] = leaves
                 if leaves == 0 and self.orders[oid]['status'] == 'open':
                     logger.info(f"order_executed: order {oid} filled")
-                    order['status'] = 'filled'
+                    self.orders[oid]['status'] = 'filled'
             else:
                 logger.info(f"order_executed: order {oid} executed; leaves = {leaves}")
 
