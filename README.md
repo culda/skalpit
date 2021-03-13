@@ -13,9 +13,34 @@ sudo apt-get install -y python3-pip
 sudo apt-get install build-essential libssl-dev libffi-dev python3-dev python3-venv
 ```
 ```
-cd collina
+git clone git@github.com:culda/skalpit.git
+cd skalpit
 python3 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
+
+mkdir -p logs
+mkdir -p trades
+mkdir -p hist_data
+```
+
+You need to create a .env file and fill in your API keys
+```
+SYMBOL=BTCUSD
+BYBIT_PUBLIC_TRADE=
+BYBIT_SECRET_TRADE=
+
+```
+
+To run the backtester
+
+```
+python run_backtester.py
+```
+
+To run skalpit
+
+```
+python run_backtester.py
 ```

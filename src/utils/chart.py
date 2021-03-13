@@ -5,7 +5,8 @@ import matplotlib.dates as mdates
 import numpy as np
 import pandas as pd
 import matplotlib.cbook as cbook
-from utils import timestamp_to_date
+
+from src.utils.utils import timestamp_to_date
 
 class Chart():
     def __init__(self, **kwargs):

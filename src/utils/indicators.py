@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 import math
 import logging
-from utils import get_logger
+
+from src.utils.utils import get_logger
 logger = get_logger(logging.getLogger(__name__), 'logs/indicators.log', logging.DEBUG)
 
 def calc_indi(indi_obj, klines):

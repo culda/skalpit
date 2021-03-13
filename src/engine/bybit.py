@@ -11,7 +11,7 @@ from requests.exceptions import HTTPError
 from websocket import WebSocketApp
 import logging
 
-from utils import get_logger, date_to_seconds
+from src.utils.utils import get_logger, date_to_seconds
 
 logger = get_logger(logging.getLogger(__name__), 'logs/bybit.log', logging.DEBUG)
 
