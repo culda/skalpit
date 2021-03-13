@@ -36,11 +36,11 @@ BYBIT_SECRET_TRADE=
 To run the backtester
 
 ```
-python run_backtester.py
+python main.py backtester
 ```
 
 To run skalpit
 
 ```
-python run_backtester.py
+python main.py skalpit
 ```
