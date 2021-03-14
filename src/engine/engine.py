@@ -72,7 +72,7 @@ class Engine():
 
         timestamp_mapping_dict = {
             '15m': htf_15m_ts,
-            '1h': htf_1h_ts         
+            '1h': htf_1h_ts
         }
         result = self.klines['1m']
         #add daily open

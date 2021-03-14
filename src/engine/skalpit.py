@@ -14,16 +14,26 @@ logger = get_logger(logging.getLogger(__name__), 'logs/skalpit.log', logging.DEB
 
 class Skalpit(Engine):
     def __init__(self, *args, **kwargs):
-        api_key = kwargs.get('api_key')
-        secret = kwargs.get('secret')
-        strategy = kwargs.get('strategy')
-        symbol = kwargs.get('symbol')
-        super().__init__(api_key = api_key, secret = secret, ws = True, symbol = symbol, strategy = strategy, callback = self.callback)
+        if not kwargs.get('testmode'):
+            api_key = kwargs.get('api_key')
+            secret = kwargs.get('secret')
+            strategy = kwargs.get('strategy')
+            symbol = kwargs.get('symbol')
+            super().__init__(api_key = api_key, secret = secret, ws = True, symbol = symbol, strategy = strategy, callback = self.callback)
 
-        self.account = self._create_account()
 
-        while True:
-            time.sleep(2000)
+            self.account = self._create_account()
+
+            # time.sleep(5)
+            # mkt = 60000
+            # sl = 55000
+            # tp = 75000
+            # self.account.open('long', mkt, stop = sl, tp = tp, risk = self.risk, is_maker = False, timestamp = int(time.time()))
+            # self.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
+            # self.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
+
+            while True:
+                time.sleep(2000)
 
     def callback(self, **kwargs):
         topic = kwargs.get("topic")

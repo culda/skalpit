@@ -2,8 +2,8 @@ import unittest
 
 class TestTestAccount(unittest.TestCase):
     def setUp(self):
-        from src.account.live_account import LiveAccount
-        self.account = LiveAccount(startbalance=1)
+        from src.account.test_account import TestAccount
+        self.account = TestAccount(startbalance=1)
 
     def test_trade1(self):
         self.account.open("long", 50000, stop = 49000, tp = 51000, risk = 5)
@@ -35,7 +35,7 @@ class TestTestAccount(unittest.TestCase):
 
         self.assertEqual(f"{self.account.balance:.8f}", "0.94991250")
 
-        from utils import percent
+        from src.utils.utils import percent
         self.assertEqual(f'{percent(self.account.startbalance, self.account.balance):.2f}%', '-5.01%')
 
 

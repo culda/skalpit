@@ -10,6 +10,7 @@ if __name__ == '__main__':
 
     from sys import argv
     engine = argv[1]
+    args = argv[2:]
 
     load_dotenv()
     symbol = os.getenv("SYMBOL")
@@ -17,9 +18,9 @@ if __name__ == '__main__':
     secret = os.getenv("BYBIT_SECRET_TRADE")
 
     if engine == "skalpit":
-        Skalpit(api_key = api_key, secret = secret, symbol = symbol, strategy = strategy)
+        Skalpit(api_key = api_key, secret = secret, symbol = symbol, strategy = strategy, args = args)
     elif engine == "backtester":
-        Backtester(api_key = api_key, secret = secret, symbol = symbol, strategy = strategy)
+        Backtester(api_key = api_key, secret = secret, symbol = symbol, strategy = strategy, args = args)
     else:
         print(f"engine {engine} is invalid. Use skalpit or backtester")
         exit(1)
