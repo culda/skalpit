@@ -8,7 +8,7 @@ from collections import deque
 import pandas as pd
 from requests import Request, Session
 from requests.exceptions import HTTPError
-from websocket import WebSocketApp
+import websocket
 import logging
 
 from src.utils.utils import get_logger, date_to_seconds
@@ -61,7 +61,7 @@ class Bybit():
 
     def _connect(self):
         logger.debug("init WebSocketApp")
-        self.ws = WebSocketApp(url=self.ws_url,
+        self.ws = websocket.WebSocketApp(url=self.ws_url,
                                on_open=self._on_open,
                                on_message=self._on_message)
 
