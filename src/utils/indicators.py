@@ -34,7 +34,6 @@ def ao(props, klines):
     slow = props.get('slow')
     offset = props.get('offset')
     ao = pd.DataFrame({'ao': ta.ao(klines[interval]['High'], klines[interval]['Low'], fast, slow), 'aoo': ta.ao(klines[interval]['High'], klines[interval]['Low'], fast, slow, offset)})
-    # hma = pd.DataFrame({'hma' : ta.hma(klines[interval]['Close'], length) , 'hmao': ta.hma(klines[interval]['Close'], length, offset)})
     return interval, pd.Series(ao.apply(lambda row: row['ao'] > row['aoo'] if not (math.isnan(row['ao']) or math.isnan(row['aoo'])) else None, axis = 1), name ='ao')
 
 def atr(props, klines):
