@@ -18,6 +18,9 @@ class Backtester(Engine):
         secret = kwargs.get('secret')
         strategy = kwargs.get('strategy')
         super().__init__(api_key = api_key, secret = secret, ws = False, strategy = strategy)
+        
+        self.start_ts = date_to_seconds(kwargs.get('args')[0])
+        self.end_ts = date_to_seconds(kwargs.get('args')[1])
 
         #setup account
         self.account = TestAccount(startbalance = 1)
@@ -27,11 +30,11 @@ class Backtester(Engine):
         kline_dict = self.aggregate_local_and_hist_klines('BTCUSD', ['1h', '15m', '1m'])
 
         # constructing working set
-        start_ts = date_to_seconds("2021-03-05 00:00:00")
-        end_ts = date_to_seconds("2021-03-12 11:00:00")
-        self.klines['1m'] = kline_dict['1m'].loc[[x for x in range(start_ts, end_ts, 60)]]
-        self.klines['15m'] = kline_dict['15m'].loc[[x for x in range(start_ts, end_ts, 900)]]
-        self.klines['1h'] = kline_dict['1h'].loc[[x for x in range(start_ts, end_ts, 3600)]]
+        self.klines['1m'] = kline_dict['1m'].loc[[x for x in range(self.start_ts, self.end_ts, 60)]]
+        self.klines['15m'] = kline_dict['15m'].loc[[x for x in range(self.start_ts, self.end_ts, 900)]]
+        self.klines['1h'] = kline_dict['1h'].loc[[x for x in range(self.start_ts, self.end_ts, 3600)]]
+
+        print(self.klines['1h'])
 
         toc = time.perf_counter()
         print(f"aggregate klines: {toc-tic:.4f}")
@@ -95,22 +98,37 @@ class Backtester(Engine):
 
         for interval in intervals:
             filename = PATH_HIST_KLINES[interval]
-            file_klines = pd.read_csv(filename, index_col=0, names = ["Open","High","Low","Close","Volume","TurnOver","Date"])
-            file_klines.loc[:,'Date'] = [datetime.fromtimestamp(i).strftime('%Y-%m-%d %H:%M:%S.%d')[:-3] for i in file_klines.index]
+            file_klines = pd.DataFrame()
 
-            last = file_klines.tail(1).index[0]
-            next_ts = int(last) + interval_bybit_notation(interval) * 60
+            request_begin = strat_begin = self.start_ts - 300000
+            write_mode = 'w'
+
+            try:
+                file_klines = pd.read_csv(filename, index_col=0, names = ["Open","High","Low","Close","Volume","TurnOver","Date"])
+                file_klines.loc[:,'Date'] = [datetime.fromtimestamp(i).strftime('%Y-%m-%d %H:%M:%S.%d')[:-3] for i in file_klines.index]
+                newest = file_klines.tail(1).index[0]
+                oldest = file_klines.head(1).index[0]
+                if oldest - strat_begin > interval_bybit_notation(interval) * 60:
+                    request_begin = strat_begin
+                    write_mode = 'w'
+                    file_klines = pd.DataFrame()
+                else:
+                    request_begin = int(newest) + interval_bybit_notation(interval) * 60
+                    write_mode = 'a'
+            except FileNotFoundError as err:
+                pass
+
             bybit_klines = pd.DataFrame()
-            if next_ts < int(datetime.now().timestamp()):
-                output_data = self.bybit.get_hist_klines(symbol, interval_bybit_notation(interval), str(next_ts))
+            if request_begin < int(datetime.now().timestamp()):
+                output_data = self.bybit.get_hist_klines(symbol, interval_bybit_notation(interval), str(request_begin))
                 column_data = [i[1:] for i in output_data]
                 index = [int(i[0]) for i in output_data]
                 # convert to data frame
                 bybit_klines = pd.DataFrame(column_data, index = index, columns=['Open', 'High', 'Low', 'Close', 'Volume', 'TurnOver'])
                 bybit_klines.loc[:,'Date'] = [datetime.fromtimestamp(i).strftime('%Y-%m-%d %H:%M:%S.%d')[:-3] for i in bybit_klines.index]
 
-                bybit_klines.to_csv(filename, header = False,  mode='a')
+                bybit_klines.to_csv(filename, header = False,  mode=write_mode)
 
             result[interval] = pd.concat([file_klines, bybit_klines]) if not len(bybit_klines.index) == 0 else file_klines
-        
+
         return result

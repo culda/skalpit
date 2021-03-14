@@ -13,6 +13,8 @@ class LiveAccount(Account):
         self.orders = {}
 
     def new_order(self, data):
+        print("new_order")
+        print(data)
         try:
             oid = data.get('order_id')
             self.orders[oid] = {
@@ -38,11 +40,21 @@ class LiveAccount(Account):
 
     def export_position(self):
         timestamp = int(time.time())
-        with open(f'trades/trade-{timestamp}', 'w') as outfile:
-            json.dump({
-                "trade": self.trade,
-                "orders": self.orders
-            }, outfile)
+        try:
+            with open(f'trades/trade-{timestamp}', 'w') as outfile:
+                json.dump({
+                    "trade": dict(self.trade),
+                    "orders": dict(self.orders)
+                }, outfile)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()            
+            logger.error(f"""
+                export_position: {e} 
+                export_position: trade: {self.trade}
+                export_position: trade: {self.orders}
+                """)            
+
 
     def order_executed(self, data):
         print("order_executed")
@@ -57,8 +69,13 @@ class LiveAccount(Account):
                 if leaves == 0 and self.orders[oid]['status'] == 'open':
                     logger.info(f"order_executed: order {oid} filled")
                     self.orders[oid]['status'] = 'filled'
-            else:
-                logger.info(f"order_executed: order {oid} executed; leaves = {leaves}")
+            else:                
+                logger.info(f"order_executed: new order {oid} executed; leaves = {leaves}")
+                self.orders[oid] = {
+                    'status': 'filled',
+                    'leaves': data.get('leaves_qty'),
+                    'details': data
+                 }
 
         except Exception as e:
             import traceback
