@@ -1,4 +1,4 @@
-FROM python:3.7.10-buster
+FROM python:3.9.2-buster
 
 WORKDIR /app
 
@@ -7,6 +7,6 @@ COPY . /app
 RUN pip install --no-cache-dir -r requirements.txt
 RUN mkdir -p logs
 RUN mkdir -p trades
-RUN mkdir -p src/hist_data
+RUN mkdir -p hist_data
 
-CMD ["python" , "main.py", "skalpit"]
+ENTRYPOINT ["python3" , "main.py", "skalpit"]
