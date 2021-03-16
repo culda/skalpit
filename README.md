@@ -54,3 +54,8 @@ Docker commands
 docker build -f dockerfile.skalpit -t skalpit:1.0 .
 docker run -d --name skalpit skalpit:1.0
 ```
+
+Running tests
+```
+python -m unittest discover -s src/tests -p '*_test.py'
+```

@@ -35,16 +35,9 @@ class Engine():
             return "short"
 
     def _check_time(self, row):
-        # no_trade_hours = [1,2,3,4,5,6,7,8,9,10]
-        # no_trade_hours = [21,22,23,0,1,2,3,4,5,6,7]
-        # no_trade_hours = [8,9,21,22,23,0,1,2,3,4,5,6,7]
-        # no_trade_hours = [0,1,2,3,4,5,6] # asia
-        # no_trade_hours = [18,19,20,21,22,23,0,1,2,3,4,5,6,7,8,9] #best so far
-        # no_trade_hours = [14,15,16,17,18,19,20,21] #US
-        no_trade_hours = []
+        no_trade_hours = self.strategy.get('no-trade-hours') #best so far
         hour = datetime.fromtimestamp(row.name).hour
         return not hour in no_trade_hours
-
 
     def _check_risk_management(self):
         return self.account.dailywon < 1 and self.account.dailylost <= 3 and self.account.trade == None

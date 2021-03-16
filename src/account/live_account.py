@@ -13,8 +13,7 @@ class LiveAccount(Account):
         self.orders = {}
 
     def new_order(self, data):
-        print("new_order")
-        print(data)
+        logger.debug(f"new_order: {data}")
         try:
             oid = data.get('order_id')
             self.orders[oid] = {
@@ -29,16 +28,17 @@ class LiveAccount(Account):
                 """)        
 
     def position_update(self, data):
-        print("position_update")
-        print(data)
+        logger.debug(f"position_update: {data}")
         size = data.get('size')
         if size == 0 and not self.trade == None:
-            self._close(data)
+            self._close(data)            
             self.export_position()
             self.trades.append(self.trade)
             self.trade = None
+        logger.info(f"position_update: daily won {self.dailywon}, dailylost = {self.dailylost}, dailytrades = {self.dailytrades}")
 
     def export_position(self):
+        logger.debug(f"export_position")        
         timestamp = int(time.time())
         try:
             with open(f'trades/trade-{timestamp}', 'w') as outfile:
@@ -48,11 +48,11 @@ class LiveAccount(Account):
                 }, outfile)
         except Exception as e:
             import traceback
-            traceback.print_exc()            
+            traceback.print_exc()
             logger.error(f"""
                 export_position: {e} 
                 export_position: trade: {self.trade}
-                export_position: trade: {self.orders}
+                export_position: orders: {self.orders}
                 """)            
 
 

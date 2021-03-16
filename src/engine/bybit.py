@@ -3,7 +3,7 @@ import hmac
 import json
 import time
 import urllib.parse
-from threading import Thread
+import threading
 from collections import deque
 import pandas as pd
 from requests import Request, Session
@@ -37,10 +37,10 @@ class Bybit():
 
         if ws:
             self.ws_data = {f'trade.{self.symbol}': deque(maxlen=200), 
-                f'instrument_info.100ms{self.symbol}': {},
+                f'instrument_info.100ms.{self.symbol}': {},
                 f'orderBookL2_25.{self.symbol}': pd.DataFrame(),
                 'position': {},
-                'execution': deque(maxlen=200), 
+                'execution': deque(maxlen=200),
                 'order': deque(maxlen=200),
                 'klines': {
                     '1m': deque(maxlen=2000),
@@ -49,47 +49,35 @@ class Bybit():
                 }
                 }
 
-            # self._setup_klines()
+            self._setup_klines()
 
-            self._connect()
+            if not test:
+                self._connect()
 
     #
     # WebSocket
     #
 
     def _connect(self):
-        logger.debug("_connect: init WebSocketApp")
-        self.ws = websocket.WebSocketApp(url="ws://echo.websocket.org/",
+        logger.info("_connect: init WebSocketApp")
+        self.ws = websocket.WebSocketApp(url=self.ws_url,
                                on_open=self._on_open,
                                on_message=self._on_message,
                                on_close=self._on_close,
                                on_error=self._on_error)
 
 
-        # ws = websocket.create_connection(self.ws_url)
-        # print("Sending 'Hello, World'...")
-        # ws.send("Hello, World")
-        # print("Sent")
-        # print("Receiving...")
-        # result =  ws.recv()
-        # print("Received '%s'" % result)
-        # ws.close()
-        # self.send_ping()
-        # self.ws.run_forever()
-        # Thread(target=self.ws.run_forever, daemon=True).start()
+        # threading.Thread(target=self.ws.run_forever, daemon=False).start()
         self.ws.run_forever()
     
     def _on_error(self):
-        print("error")
         logger.error("_on_error")
 
     def _on_close(self):
-        print("close")
-        logger.debug("_on_close: websocket is closed")
+        logger.info("_on_close: websocket is closed")
 
     def _on_open(self):
-        print("open")
-        logger.debug("_on_open: websocket is open")
+        logger.info("_on_open: websocket is open")
         timestamp = int((time.time()+1000) * 1000)
         param_str = 'GET/realtime' + str(timestamp)
         sign = hmac.new(self.secret.encode('utf-8'),
@@ -108,24 +96,17 @@ class Bybit():
                                          f'klineV2.15.{self.symbol}',
                                          f'klineV2.60.{self.symbol}',
                                          ]}))
+        self.send_ping()
 
     def send_ping(self):
-        print(time.ctime())
-        threading.Timer(10, self.send_ping).start()
+        self.ws.send('{"op":"ping"}')
+        threading.Timer(60, self.send_ping).start()
 
     def _on_message(self, message):
         logger.debug(f"_on_message: {message}")
         try:
-            message = json.loads(message)            
-
-            if message.get("success") == False:
-                logger.debug("received False message, sending ping")
-                self.ws.send('{"op":"ping"}')
-            elif message.get("success"):
-                op = message.get("request", {}).get("op")
-                if op == "subscribe":
-                    logger.debug("subscriptions accepted")
-            else:
+            message = json.loads(message)
+            if message.get('topic'):
                 topic = message.get('topic')
 
                 if 'orderBookL2_25' in topic:
@@ -148,22 +129,23 @@ class Bybit():
             logger.error(f"_on_message: {err}")
 
     def _on_ws_execution(self, message):
-        # self.ws_data['execution'].append(message['data'][0])     
+        self.ws_data['execution'].append(message['data'][0])     
         self.callback(topic = f"execution", data = message.get('data')[0])
 
     def _on_ws_order(self, message):
-        # self.ws_data['order'].append(message['data'][0])
+        self.ws_data['order'].append(message['data'][0])
         self.callback(topic = f"order", data = message.get('data')[0])
 
     def _on_ws_instrumentinfo(self, message):
+        self.ws_data['position'].append(position)
         self.ws_data[f'instrument_info.100ms.{self.symbol}'].append(message['data'][0])            
 
     def _on_ws_trade(self, message):
+        self.ws_data['trade'].append(position)
         self.ws_data[f'trade.{self.symbol}'].append(message['data'][0])        
 
     def _on_ws_position(self, message):
-        # self.ws_data['position'].append(position)
-        # print("got position")
+        self.ws_data['position'].append(position)
         self.callback(topic = f"position", data = message.get('data')[0])
 
     def _on_ws_kline(self, topic, data):
@@ -193,7 +175,6 @@ class Bybit():
             else:
                 self.ws_data['klines'][interval].append(last)
                 self.ws_data['klines'][interval].append(tick)
-                self.ws_data['klines'][interval].popleft()
                 self.callback(topic = f"kline.{interval}", data = self.ws_data['klines'][interval])
 
         except Exception as e:
