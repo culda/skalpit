@@ -15,8 +15,6 @@ from src.utils.utils import get_logger, date_to_seconds
 
 logger = get_logger(logging.getLogger(__name__), 'logs/bybit.log', logging.DEBUG)
 
-# COLS = ['Open', 'High', 'Low', 'Close', 'Volume', 'TurnOver']
-
 class Bybit():
     url_main = 'https://api.bybit.com'
     url_test = 'https://api-testnet.bybit.com'
@@ -51,7 +49,7 @@ class Bybit():
                 }
                 }
 
-            self._setup_klines()
+            # self._setup_klines()
 
             self._connect()
 
@@ -60,16 +58,38 @@ class Bybit():
     #
 
     def _connect(self):
-        logger.debug("init WebSocketApp")
-        self.ws = websocket.WebSocketApp(url=self.ws_url,
+        logger.debug("_connect: init WebSocketApp")
+        self.ws = websocket.WebSocketApp(url="ws://echo.websocket.org/",
                                on_open=self._on_open,
-                               on_message=self._on_message)
+                               on_message=self._on_message,
+                               on_close=self._on_close,
+                               on_error=self._on_error)
 
 
-        Thread(target=self.ws.run_forever, daemon=True).start()
+        # ws = websocket.create_connection(self.ws_url)
+        # print("Sending 'Hello, World'...")
+        # ws.send("Hello, World")
+        # print("Sent")
+        # print("Receiving...")
+        # result =  ws.recv()
+        # print("Received '%s'" % result)
+        # ws.close()
+        # self.send_ping()
+        # self.ws.run_forever()
+        # Thread(target=self.ws.run_forever, daemon=True).start()
+        self.ws.run_forever()
+    
+    def _on_error(self):
+        print("error")
+        logger.error("_on_error")
+
+    def _on_close(self):
+        print("close")
+        logger.debug("_on_close: websocket is closed")
 
     def _on_open(self):
-        logger.debug("websocket is open")
+        print("open")
+        logger.debug("_on_open: websocket is open")
         timestamp = int((time.time()+1000) * 1000)
         param_str = 'GET/realtime' + str(timestamp)
         sign = hmac.new(self.secret.encode('utf-8'),
@@ -89,10 +109,14 @@ class Bybit():
                                          f'klineV2.60.{self.symbol}',
                                          ]}))
 
+    def send_ping(self):
+        print(time.ctime())
+        threading.Timer(10, self.send_ping).start()
+
     def _on_message(self, message):
+        logger.debug(f"_on_message: {message}")
         try:
-            message = json.loads(message)
-            logger.debug(message)
+            message = json.loads(message)            
 
             if message.get("success") == False:
                 logger.debug("received False message, sending ping")
