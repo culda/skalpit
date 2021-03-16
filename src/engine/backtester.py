@@ -34,8 +34,6 @@ class Backtester(Engine):
         self.klines['15m'] = kline_dict['15m'].loc[[x for x in range(self.start_ts, self.end_ts, 900)]]
         self.klines['1h'] = kline_dict['1h'].loc[[x for x in range(self.start_ts, self.end_ts, 3600)]]
 
-        print(self.klines['1h'])
-
         toc = time.perf_counter()
         print(f"aggregate klines: {toc-tic:.4f}")
 

@@ -40,11 +40,17 @@ BYBIT_SECRET_TRADE=
 To run the backtester
 
 ```
-python main.py backtester
+python main.py backtester 2021-03-05 2021-03-10
 ```
 
 To run skalpit
 
 ```
 python main.py skalpit
+```
+
+Docker commands
+```
+docker build -f dockerfile.skalpit -t skalpit:1.0 .
+docker run -d --name skalpit skalpit:1.0
 ```
