@@ -39,7 +39,7 @@ class Bybit():
             self.ws_data = {f'trade.{self.symbol}': deque(maxlen=200), 
                 f'instrument_info.100ms.{self.symbol}': {},
                 f'orderBookL2_25.{self.symbol}': pd.DataFrame(),
-                'position': {},
+                'position': deque(maxlen=200),
                 'execution': deque(maxlen=200),
                 'order': deque(maxlen=200),
                 'klines': {
@@ -52,23 +52,27 @@ class Bybit():
             self._setup_klines()
 
             if not test:
-                self._connect()
+                self._init_socket()
 
     #
     # WebSocket
     #
 
-    def _connect(self):
-        logger.info("_connect: init WebSocketApp")
+    def _init_socket(self):
+        logger.info("_init_socket: init WebSocketApp")
         self.ws = websocket.WebSocketApp(url=self.ws_url,
                                on_open=self._on_open,
                                on_message=self._on_message,
                                on_close=self._on_close,
                                on_error=self._on_error)
 
+        # threading.Thread(target=self.keep_alive, daemon=True).start()
+        # self.ws.run_forever()
+        self.keep_alive()
 
-        # threading.Thread(target=self.ws.run_forever, daemon=False).start()
-        self.ws.run_forever()
+    def keep_alive(self):
+        while self.ws.run_forever():
+            pass        
     
     def _on_error(self):
         logger.error("_on_error")
@@ -137,7 +141,6 @@ class Bybit():
         self.callback(topic = f"order", data = message.get('data')[0])
 
     def _on_ws_instrumentinfo(self, message):
-        self.ws_data['position'].append(position)
         self.ws_data[f'instrument_info.100ms.{self.symbol}'].append(message['data'][0])            
 
     def _on_ws_trade(self, message):
@@ -200,10 +203,6 @@ class Bybit():
                 insert_list = pd.io.json.json_normalize(message['data']['insert']).set_index('id')
                 self.ws_data[topic].update(insert_list)
                 self.ws_data[topic] = self.ws_data[topic].sort_index(ascending=False)        
-
-    def subscribe(self, topic):
-        self.ws.send(json.dumps(
-            {'op': 'subscribe', 'args': [f'${topic}.${self.symbol}']}))
 
     def get_trade(self):
         if not self.ws: return None
@@ -369,106 +368,41 @@ class Bybit():
 
         return output_data
 
-    def get_active_order(self, order_id=None, order_link_id=None, symbol=None,
-                         sort=None, order=None, page=None, limit=None,
-                         order_status=None):
-        payload = {
-            'order_id': order_id,
-            'order_link_id': order_link_id,
-            'symbol': symbol if symbol else self.symbol,
-            'sort': sort,
-            'order': order,
-            'page': page,
-            'limit': limit,
-            'order_status': order_status
-        }
-        return self._request('GET', '/open-api/order/list', payload=payload)
-
-    def cancel_active_order(self, order_id=None):
-        payload = {
-            'order_id': order_id
-        }
-        return self._request('POST', '/open-api/order/cancel', payload=payload)
-
-    def place_conditional_order(self, side=None, symbol=None, order_type=None,
-                                qty=None, price=None, base_price=None,
-                                stop_px=None, time_in_force='GoodTillCancel',
-                                close_on_trigger=None, reduce_only=None,
-                                order_link_id=None):
-        payload = {
-            'side': side,
-            'symbol': symbol if symbol else self.symbol,
-            'order_type': order_type,
-            'qty': qty,
-            'price': price,
-            'base_price': base_price,
-            'stop_px': stop_px,
-            'time_in_force': time_in_force,
-            'close_on_trigger': close_on_trigger,
-            'reduce_only': reduce_only,
-            'order_link_id': order_link_id
-        }
-        return self._request('POST', '/open-api/stop-order/create', payload=payload)
-
-    def get_conditional_order(self, stop_order_id=None, order_link_id=None,
-                              symbol=None, sort=None, order=None, page=None,
-                              limit=None):
-        payload = {
-            'stop_order_id': stop_order_id,
-            'order_link_id': order_link_id,
-            'symbol': symbol if symbol else self.symbol,
-            'sort': sort,
-            'order': order,
-            'page': page,
-            'limit': limit
-        }
-        return self._request('GET', '/open-api/stop-order/list', payload=payload)
-
-    def cancel_conditional_order(self, order_id=None):
-        payload = {
-            'order_id': order_id
-        }
-        return self._request('POST', '/open-api/stop-order/cancel', payload=payload)
-
-    def get_leverage(self):
-        payload = {}
-        return self._request('GET', '/user/leverage', payload=payload)
-
     def change_leverage(self, symbol=None, leverage=None):
         payload = {
             'symbol': symbol if symbol else self.symbol,
             'leverage': leverage
         }
-        return self._request('POST', '/user/leverage/save', payload=payload)
+        return self._request('POST', '/v2/private/position/leverage/save', payload=payload)
 
     def get_position_http(self):
         payload = {}
-        return self._request('GET', '/position/list', payload=payload)
+        return self._request('GET', '/v2/private/position/list', payload=payload)
 
     def change_position_margin(self, symbol=None, margin=None):
         payload = {
             'symbol': symbol if symbol else self.symbol,
             'margin': margin
         }
-        return self._request('POST', '/position/change-position-margin', payload=payload)
+        return self._request('POST', '/v2/private/position/change-position-margin', payload=payload)
 
     def get_prev_funding_rate(self, symbol=None):
         payload = {
             'symbol': symbol if symbol else self.symbol,
         }
-        return self._request('GET', '/open-api/funding/prev-funding-rate', payload=payload)
+        return self._request('GET', '/v2/public/funding/prev-funding-rate', payload=payload)
 
     def get_prev_funding(self, symbol=None):
         payload = {
             'symbol': symbol if symbol else self.symbol,
         }
-        return self._request('GET', '/open-api/funding/prev-funding', payload=payload)
+        return self._request('GET', '/v2/public/funding/prev-funding', payload=payload)
 
     def get_predicted_funding(self, symbol=None):
         payload = {
             'symbol': symbol if symbol else self.symbol,
         }
-        return self._request('GET', '/open-api/funding/predicted-funding', payload=payload)
+        return self._request('GET', '/v2/public/funding/predicted-funding', payload=payload)
 
     def get_my_execution(self, order_id=None):
         payload = {
@@ -482,9 +416,6 @@ class Bybit():
             'coin': symbol
         }
         return self._request('GET', '/v2/private/wallet/balance', payload=payload)        
-    #
-    # New Http Apis (developing)
-    #
 
     def symbols(self):
         payload = {}
@@ -527,10 +458,6 @@ class Bybit():
             'symbol': self.symbol
         }
         return self._request('POST', '/v2/private/order/cancelAll', payload=payload)
-
-    #
-    # New Http Apis added by ST 
-    #
 
     def get_ticker(self, symbol=None):
         payload = {

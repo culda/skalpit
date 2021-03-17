@@ -22,7 +22,7 @@ class Skalpit(Engine):
             super().__init__(api_key = api_key, secret = secret, ws = True, symbol = symbol, strategy = strategy, callback = self.callback)
 
 
-            # self.account = self._create_account()
+            self.account = self._create_account()
 
             # time.sleep(5)
             # mkt = 60000
@@ -34,6 +34,28 @@ class Skalpit(Engine):
 
             # while True:
                 # time.sleep(2000)
+            # import threading
+            # bb = threading.Thread(target=self.bybit.ws.run_forever, daemon=True)
+
+            # bb.start()
+            # bbclose = threading.Timer(20, self.bybit.ws.close).start()
+            # bb.join()
+
+            # print("done1")
+
+            # bb.start()
+            # bbclose = threading.Timer(20, self.bybit.ws.close).start()
+            # bb.join()
+
+            # print("done2")
+
+            #If I got here, the websocket died, so we have to reset
+            
+            logger.info("done")
+    
+    def reconnect(self, ws):
+        while ws.run_forever():
+            pass
 
     def callback(self, **kwargs):
         topic = kwargs.get("topic")
@@ -74,7 +96,7 @@ class Skalpit(Engine):
 
         if not self.klines['1m'].empty and not self.klines['1h'].empty and not self.klines['15m'].empty:
             table = self._get_indis()
-            self.process_kline(table.iloc[-1], self.signals)
+            # self.process_kline(table.iloc[-1], self.signals)
             
     def process_kline(self, row, signals):
         try:

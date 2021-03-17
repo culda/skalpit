@@ -21,8 +21,6 @@ class Engine():
 
         self.bybit = Bybit(api_key = kwargs.get('api_key'), secret = kwargs.get('secret'), symbol = self.symbol, ws=kwargs.get('ws'), callback = kwargs.get('callback'))
 
-
-    
     def _check_signal(self, row, signals):
         if all([row[s] for s in signals]) and row['Open'] > row['daily_open']:
             return "long"
