@@ -71,8 +71,11 @@ class Bybit():
         self.keep_alive()
 
     def keep_alive(self):
-        while self.ws.run_forever():
-            pass        
+        try:
+            while self.ws.run_forever():
+                pass
+        except Exception as err:
+            logger.error(f"keep_alive: {err}")
     
     def _on_error(self):
         logger.error("_on_error")
