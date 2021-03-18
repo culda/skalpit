@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
-from src.engine.bybit import Bybit
 from src.utils.indicators import calc_indi
 from src.utils.utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds, interval_bybit_notation
 
@@ -19,10 +18,6 @@ class Engine():
         self.signals = [s.get('name') for s in self.strategy.get('signal')]
         self.risk = self.strategy.get('risk')
 
-        self.bybit = Bybit(api_key = kwargs.get('api_key'), secret = kwargs.get('secret'), symbol = self.symbol, ws=kwargs.get('ws'), callback = kwargs.get('callback'))
-
-
-    
     def _check_signal(self, row, signals):
         if all([row[s] for s in signals]) and row['Open'] > row['daily_open']:
             return "long"

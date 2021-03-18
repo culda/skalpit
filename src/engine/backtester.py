@@ -8,17 +8,20 @@ from src.utils.constants import PATH_HIST_KLINES
 from src.account.test_account import TestAccount
 from src.utils.chart import Chart
 from src.engine.engine import Engine
+from src.engine.bybit_rest import BybitRest
 from src.utils.utils import get_logger, interval_bybit_notation, date_to_seconds
 
 logger = get_logger(logging.getLogger(__name__), 'logs/backtester.log', logging.DEBUG)
 
 class Backtester(Engine):
     def __init__(self, *args, **kwargs):
+        super().__init__(strategy =  kwargs.get('strategy'), symbol = kwargs.get('symbol'))
+
         api_key = kwargs.get('api_key')
         secret = kwargs.get('secret')
-        strategy = kwargs.get('strategy')
-        super().__init__(api_key = api_key, secret = secret, ws = False, strategy = strategy)
         
+        self.bybit = BybitRest(api_key = api_key, secret = secret, symbol = self.symbol)
+
         self.start_ts = date_to_seconds(kwargs.get('args')[0])
         self.end_ts = date_to_seconds(kwargs.get('args')[1])
 

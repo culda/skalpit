@@ -2,27 +2,29 @@ import logging
 import time
 import numpy as np
 import pandas as pd
-import pandas_ta as ta
 from datetime import datetime
 
 from src.utils.indicators import calc_indi
 from src.utils.utils import get_logger, start_of_min15, start_of_hour, start_of_hour4, start_of_day, date_to_seconds
 from src.account.live_account import LiveAccount
 from src.engine.engine import Engine
+from src.engine.bybit_ws import BybitWs
+from src.engine.bybit_rest import BybitRest
 
 logger = get_logger(logging.getLogger(__name__), 'logs/skalpit.log', logging.DEBUG)
 
 class Skalpit(Engine):
     def __init__(self, *args, **kwargs):
         if not kwargs.get('testmode'):
+            super().__init__(strategy =  kwargs.get('strategy'), symbol = kwargs.get('symbol'))
+
             api_key = kwargs.get('api_key')
             secret = kwargs.get('secret')
-            strategy = kwargs.get('strategy')
-            symbol = kwargs.get('symbol')
-            super().__init__(api_key = api_key, secret = secret, ws = True, symbol = symbol, strategy = strategy, callback = self.callback)
+            
+            self.restclient = BybitRest(api_key = api_key, secret = secret, symbol = self.symbol)
+            self.account = self._create_account()
 
-
-            # self.account = self._create_account()
+            self.bybitws = BybitWs(api_key = api_key, secret = secret, symbol = self.symbol, callback = self.callback, restclient = self.restclient)            
 
             # time.sleep(5)
             # mkt = 60000
@@ -34,6 +36,9 @@ class Skalpit(Engine):
 
             # while True:
                 # time.sleep(2000)
+
+            print("done")
+            logger.info("done")
 
     def callback(self, **kwargs):
         topic = kwargs.get("topic")
@@ -109,7 +114,7 @@ class Skalpit(Engine):
 
     def _create_account(self):
         coin = self.symbol[:3]
-        response = self.bybit.get_balance(coin)
+        response = self.restclient.get_balance(coin)
         balance = response.get("result", {}).get(coin, {}).get("available_balance",{})
         return LiveAccount(startbalance=balance)
 

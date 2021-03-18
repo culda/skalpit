@@ -6,7 +6,7 @@ sudo apt-get -y upgrade
 ```
 ```
 >>> python3 -V
-3.9.1+
+3.7+
 ```
 Install Python 3.9:
 https://tecadmin.net/install-python-3-9-on-centos-8/

@@ -2,7 +2,7 @@ import unittest
 
 class TestBybit(unittest.TestCase):
     def setUp(self):
-        from src.engine.bybit import Bybit
+        from src.engine.bybit_ws import BybitWs
         from collections import deque
         from dotenv import load_dotenv
         import os
@@ -11,7 +11,7 @@ class TestBybit(unittest.TestCase):
         api_key = os.getenv("BYBIT_PUBLIC_TRADE")
         secret = os.getenv("BYBIT_SECRET_TRADE")
 
-        self.bybit = Bybit(api_key, secret, symbol, ws = True, test = True, callback = lambda topic , data: None)
+        self.bybit = BybitWs(api_key, secret, symbol, ws = True, test = True, callback = lambda topic , data: None)
         self.bybit.ws_data['klines']['1m'] = deque([[1615124640, 50812.0, 50832.0, 50811.5, 50831.5, 1587620.0, 31.239394730000036], [1615124700, 50831.5, 50832, 50811, 50811, 2138495, 42.07930721000005], [1615124760, 50811, 50811.5, 50811, 50811.5, 1365, 0.026863989999999997]])
 
     def test_on_ws_kline1(self):
