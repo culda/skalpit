@@ -24,9 +24,7 @@ source venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements.txt
 
-mkdir -p logs
-mkdir -p trades
-mkdir -p hist_data
+mkdir -p logs trades hist_data
 ```
 
 You need to create a .env file and fill in your API keys
@@ -52,7 +50,7 @@ python main.py skalpit
 Docker commands
 ```
 docker build -f dockerfile.skalpit -t skalpit:1.0 .
-docker run -d --name skalpit skalpit:1.0
+docker run -d skalpit:1.0
 ```
 
 Running tests

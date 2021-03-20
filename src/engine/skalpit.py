@@ -24,9 +24,6 @@ class Skalpit(Engine):
             self.restclient = BybitRest(api_key = api_key, secret = secret, symbol = self.symbol)
             self.account = self._create_account()
 
-            self.bybitws = BybitWs(api_key = api_key, secret = secret, symbol = self.symbol, callback = self.callback, restclient = self.restclient)            
-
-            # time.sleep(5)
             # mkt = 60000
             # sl = 55000
             # tp = 75000
@@ -34,8 +31,10 @@ class Skalpit(Engine):
             # self.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
             # self.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
 
-            # while True:
-                # time.sleep(2000)
+            try:
+                self.bybitws = BybitWs(api_key = api_key, secret = secret, symbol = self.symbol, callback = self.callback, restclient = self.restclient)            
+            except Exception as err:
+                logger.error("websocket error")
 
             print("done")
             logger.info("done")
@@ -86,6 +85,8 @@ class Skalpit(Engine):
             if self._check_risk_management():
                 if self._check_time(row):
                     signal = self._check_signal(row, signals)
+                    logger.debug(f"process_kline: signal = {signal}")
+                    logger.debug(row)
 
                     if signal == "long":
                         sl = round(row['Open'] - self.strategy.get('sl-atr') * row['atr'], 2)

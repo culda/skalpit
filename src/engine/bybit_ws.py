@@ -45,51 +45,55 @@ class BybitWs():
                 }
                 }
 
-            self._setup_klines()
             self._connect()
             
-
-    def __del__(self):
-        print(f"__del__: {self}")
-        logger.debug("__del__")
-   #
-    # WebSocket
-    #
-
     def _connect(self):
         logger.info("_connect: init WebSocketApp")
 
         async def listen_forever():
             while True:
                 try:
+                    logger.debug("listen_forever: connecting")
                     async with websockets.connect(self.ws_url) as ws:
+                        logger.debug("listen_forever: connection established")
+                        self._setup_klines()
                         await self._on_open(ws)
                         while True:
                             try:
                                 message = await asyncio.wait_for(ws.recv(), timeout=self.ping_timeout)
                                 await self._on_message(message)
                             except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as err:
-                                print('_connect: ws.recv() timeout')
-                                logger.debug(f"_connect: ws.recv() timeout, {err}")                                
+                                print('listen_forever: ws.recv() timeout')
+                                logger.debug(f"listen_forever: ws.recv() timeout, {err}")                                
                                 try:
+                                    logger.debug('listen_forever: sending ping')
                                     pong = await ws.ping()
                                     await asyncio.wait_for(pong, timeout=self.ping_timeout)
-                                    logger.debug('Ping OK, keeping connection alive...')
+                                    logger.debug('listen_forever: Ping OK, keeping connection alive...')
                                     continue
                                 except:
-                                    print('_connect: ping timeout')
-                                    logger.debug(f"_connect: ping timeout, {err}")
+                                    print('listen_forever: ping timeout')
+                                    logger.debug(f"listen_forever: ping timeout, {err}")
                                     await asyncio.sleep(self.sleep_time)
-                                    break  # inner loop                                
-                except socket.gaierror:
-                    logger.error(f"_connect: socket.gaierror error, {err}")
-                    continue
+                                    break                     
                 except ConnectionRefusedError:
-                    logger.error(f"_connect: ConnectionRefusedError error, {err}")
-                    continue                     
+                    logger.error(f"listen_forever: ConnectionRefusedError error, {err}")
+                    continue
+                except Exception as err:
+                    logger.error(f"listen_forever: error, {err}")
+                    continue
 
-        asyncio.get_event_loop().run_until_complete(listen_forever())
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(listen_forever())
+        finally:
+            loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.close()
+
+        # asyncio.get_event_loop().run_until_complete(listen_forever())
         print("run_until_complete is done")
+        logger.info("_connect: run_until_complete is done")
     
     def _on_error(self):
         logger.error("_on_error")
@@ -158,15 +162,15 @@ class BybitWs():
         self.callback(topic = f"order", data = message.get('data')[0])
 
     def _on_ws_instrumentinfo(self, message):
-        self.ws_data['position'].append(position)
+        self.ws_data['position'].append(message)
         self.ws_data[f'instrument_info.100ms.{self.symbol}'].append(message['data'][0])            
 
     def _on_ws_trade(self, message):
-        self.ws_data['trade'].append(position)
+        self.ws_data['trade'].append(message)
         self.ws_data[f'trade.{self.symbol}'].append(message['data'][0])        
 
     def _on_ws_position(self, message):
-        self.ws_data['position'].append(position)
+        self.ws_data['position'].append(message)
         self.callback(topic = f"position", data = message.get('data')[0])
 
     def _on_ws_kline(self, topic, data):

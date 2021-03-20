@@ -29,10 +29,6 @@ class BybitRest():
 
         self.url = self.url_main if not test else self.url_test
 
-    def __del__(self):
-        print(f"__del__: {self}")
-        logger.debug("__del__")
-
     #
     # Http Apis
     #

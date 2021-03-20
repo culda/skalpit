@@ -35,7 +35,7 @@ class LiveAccount(Account):
             self.export_position()
             self.trades.append(self.trade)
             self.trade = None
-        logger.info(f"position_update: daily won {self.dailywon}, dailylost = {self.dailylost}, dailytrades = {self.dailytrades}")
+        logger.info(f"position_update: balance {self.balance}, daily won {self.dailywon}, dailylost = {self.dailylost}, dailytrades = {self.dailytrades}")
 
     def export_position(self):
         logger.debug(f"export_position")        

@@ -4,9 +4,8 @@ WORKDIR /app
 
 COPY . /app
 
+RUN printf "SYMBOL=BTCUSD\nBYBIT_PUBLIC_TRADE=nli7cj88X3iKFUiWO0\nBYBIT_SECRET_TRADE=jkDZkBWjRZFNH6w9031p9T9nfV2uHlomTapF\n" > .env
 RUN pip install --no-cache-dir -r requirements.txt
-RUN mkdir -p logs
-RUN mkdir -p trades
-RUN mkdir -p hist_data
+RUN mkdir -p logs trades hist_data
 
 ENTRYPOINT ["python3" , "main.py", "backtester", "2021-03-02" , "2021-03-12"]
