@@ -75,23 +75,29 @@ class BybitWs():
                                     print('listen_forever: ping timeout')
                                     logger.debug(f"listen_forever: ping timeout, {err}")
                                     await asyncio.sleep(self.sleep_time)
-                                    break                     
+                                    break
                 except ConnectionRefusedError:
                     logger.error(f"listen_forever: ConnectionRefusedError error, {err}")
+                    await asyncio.sleep(self.sleep_time)
                     continue
                 except Exception as err:
                     logger.error(f"listen_forever: error, {err}")
+                    await asyncio.sleep(self.sleep_time)
                     continue
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(listen_forever())
-        finally:
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
+        async def send_ping():
+            while True:
+                await asyncio.sleep(60)
 
-        # asyncio.get_event_loop().run_until_complete(listen_forever())
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
+        # try:
+        #     loop.run_until_complete(listen_forever())
+        # finally:
+        #     loop.run_until_complete(loop.shutdown_asyncgens())
+        #     loop.close()
+
+        asyncio.get_event_loop().run_until_complete(listen_forever())
         print("run_until_complete is done")
         logger.info("_connect: run_until_complete is done")
     

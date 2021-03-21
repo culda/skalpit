@@ -38,7 +38,7 @@ class Engine():
         return self.account.dailywon < 1 and self.account.dailylost <= 3 and self.account.trade == None
 
     def _get_indis(self):
-        indis = self._calc_indis(self.strategy.get('signal'), self.strategy.get('atr'))
+        indis = self._calc_indis(self.strategy.get('signal'), self.strategy.get('atr'))        
         return self._join_indis(indis)
 
     def _calc_indis(self, signal, atr):

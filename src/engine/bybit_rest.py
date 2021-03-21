@@ -11,7 +11,7 @@ import logging
 
 from src.utils.utils import get_logger, date_to_seconds
 
-logger = get_logger(logging.getLogger(__name__), 'logs/bybit.log', logging.DEBUG)
+logger = get_logger(logging.getLogger(__name__), 'logs/bybit-rest.log', logging.DEBUG)
 
 class BybitRest():
     url_main = 'https://api.bybit.com'

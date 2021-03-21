@@ -1,5 +1,6 @@
 import json
 import logging
+from logging import handlers
 import dateparser
 import pytz
 from decimal import Decimal
@@ -9,12 +10,12 @@ from pandas import Series
 from src.utils.constants import *
 
 def get_logger(logger, fname, level = logging.INFO):
-    fh = logging.FileHandler(fname)
+    fh = handlers.RotatingFileHandler(fname, maxBytes=5000000, backupCount=10)
     fh.setLevel(level)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
     return logger
 
 logger = get_logger(logging.getLogger(__name__), 'logs/utils.log')

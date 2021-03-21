@@ -21,22 +21,13 @@ class Skalpit(Engine):
             api_key = kwargs.get('api_key')
             secret = kwargs.get('secret')
             
-            self.restclient = BybitRest(api_key = api_key, secret = secret, symbol = self.symbol)
-            self.account = self._create_account()
-
-            # mkt = 60000
-            # sl = 55000
-            # tp = 75000
-            # self.account.open('long', mkt, stop = sl, tp = tp, risk = self.risk, is_maker = False, timestamp = int(time.time()))
-            # self.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
-            # self.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
-
             try:
+                self.restclient = BybitRest(api_key = api_key, secret = secret, symbol = self.symbol)
+                self.account = self._create_account()
                 self.bybitws = BybitWs(api_key = api_key, secret = secret, symbol = self.symbol, callback = self.callback, restclient = self.restclient)            
             except Exception as err:
-                logger.error("websocket error")
+                logger.error(f"__init__: {err}")
 
-            print("done")
             logger.info("done")
 
     def callback(self, **kwargs):
@@ -73,26 +64,28 @@ class Skalpit(Engine):
         # convert to data frame
         self.klines[interval] = pd.DataFrame(column_data, index = index, columns=['Open', 'High', 'Low', 'Close', 'Volume', 'TurnOver'])
 
-        if not hasattr(self, 'bybit'):
-            return
-
-        if not self.klines['1m'].empty and not self.klines['1h'].empty and not self.klines['15m'].empty:
-            table = self._get_indis()
-            self.process_kline(table.iloc[-1], self.signals)
+        try:
+            if interval == '1m':
+                table = self._get_indis()
+                self.process_kline(table.iloc[-1], self.signals)
+        except Exception as err:
+            import traceback
+            traceback.print_exc()
+            logger.error(f"_parse_kline: {err}")
             
     def process_kline(self, row, signals):
+        logger.debug(f"process_kline")
+        logger.debug(row)
         try:
             if self._check_risk_management():
                 if self._check_time(row):
                     signal = self._check_signal(row, signals)
                     logger.debug(f"process_kline: signal = {signal}")
-                    logger.debug(row)
 
                     if signal == "long":
                         sl = round(row['Open'] - self.strategy.get('sl-atr') * row['atr'], 2)
                         tp = round(row['Open'] + self.strategy.get('tp-atr') * row['atr'], 2)
                         logger.info(f"LONG {row['Open']} SL {sl} TP {tp}")
-                        logger.info(row)
                         self.account.open('long', row['Open'], stop = sl, tp = tp, risk = self.risk, is_maker = False, timestamp = row.name)
                         self.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
                         self.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
@@ -101,7 +94,6 @@ class Skalpit(Engine):
                         sl = round(row['Open'] + self.strategy.get('sl-atr') * row['atr'], 2)
                         tp = round(row['Open'] - self.strategy.get('tp-atr') * row['atr'], 2)
                         logger.info(f"SHORT {row['Open']} SL {sl} TP {tp}")
-                        logger.info(row)
                         self.account.open('short', row['Open'], stop = sl, tp = tp, risk = self.risk, is_maker = False, timestamp = row.name)
                         self.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
                         self.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
@@ -111,12 +103,13 @@ class Skalpit(Engine):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            logger.error(f"error at {row.name}: {e} ")
+            logger.error(f"process_kline: {row.name}, {e} ")
 
     def _create_account(self):
         coin = self.symbol[:3]
         response = self.restclient.get_balance(coin)
         balance = response.get("result", {}).get(coin, {}).get("available_balance",{})
+        logger.info(f"_create_account: balance = {balance}")
         return LiveAccount(startbalance=balance)
 
 if __name__ == "__main__":
@@ -127,15 +120,15 @@ if __name__ == "__main__":
     api_key = os.getenv("BYBIT_PUBLIC_TRADE")
     secret = os.getenv("BYBIT_SECRET_TRADE")
 
-    from strategy import strategy
+    from src.engine.strategy import strategy
     sk = Skalpit(api_key = api_key, secret = secret, symbol = symbol, strategy = strategy)
 
     mkt = 58000
     sl = 55000
     tp = 75000
     sk.account.open('long', mkt, stop = sl, tp = tp, risk = 4, is_maker = True, timestamp = int(time.time()))
-    sk.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = self.account.trade['size'], stop_loss = sl)
-    sk.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = self.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
+    sk.bybit.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = sk.account.trade['size'], stop_loss = sl)
+    sk.bybit.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = sk.account.trade['size'], price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
 
     time.sleep(2000)
 
