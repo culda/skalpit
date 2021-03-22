@@ -28,6 +28,7 @@ jobs:
           with:
             resource-group: skalpit
             dns-name-label: skalpit
+            registry-login-server: skalpit.azurecr.io
             image: skalpit.azurecr.io/collina/skalpit:${{ github.sha }}
             registry-username: ${{ secrets.REGISTRY_USERNAME }}
             registry-password: ${{ secrets.REGISTRY_PASSWORD }}
