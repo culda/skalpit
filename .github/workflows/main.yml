@@ -27,6 +27,7 @@ jobs:
           uses: 'azure/aci-deploy@v1'
           with:
             resource-group: skalpit
+            dns-name-label: skalpit
             image: skalpit.azurecr.io/collina/skalpit:${{ github.sha }}
             registry-username: ${{ secrets.REGISTRY_USERNAME }}
             registry-password: ${{ secrets.REGISTRY_PASSWORD }}
