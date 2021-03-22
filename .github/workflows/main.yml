@@ -20,7 +20,7 @@ jobs:
             username: ${{ secrets.REGISTRY_USERNAME }}
             password: ${{ secrets.REGISTRY_PASSWORD }}
         - run: |
-            docker build -f dockerfile.skalpit skalpit.azurecr.io/collina/skalpit:${{ github.sha }}
+            docker build -f dockerfile.skalpit -t skalpit.azurecr.io/collina/skalpit:${{ github.sha }} .
             docker push skalpit.azurecr.io/collina/skalpit:${{ github.sha }}
 
         - name: 'Deploy to Azure Container Instances'
