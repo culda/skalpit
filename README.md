@@ -1,5 +1,12 @@
 # Skalpit - a directional trading bot
 
+Docker
+```
+docker build -f dockerfile.skalpit -t skalpit:latest .
+docker run -d skalpit:latest
+```
+
+
 ```
 sudo apt-get update
 sudo apt-get -y upgrade
@@ -45,12 +52,6 @@ To run skalpit
 
 ```
 python main.py skalpit
-```
-
-Docker commands
-```
-docker build -f dockerfile.skalpit -t skalpit:1.0 .
-docker run -d skalpit:1.0
 ```
 
 Running tests

@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -19,23 +20,27 @@ class Engine():
         self.risk = self.strategy.get('risk')
 
     def _check_signal(self, row, signals):
-        if all([row[s] for s in signals]) and row['Open'] > row['daily_open']:
+        # if all([row[s] for s in signals]) and row['Open'] > row['daily_open']:
+        #     return "long"
+        if all([row[s] for s in signals]):
             return "long"
 
         go_short = True
         for s in signals:
             if row[s] == None or row[s] == True:
                 go_short = False
-        if go_short and row['Open'] < row['daily_open']:
+        # if go_short and row['Open'] < row['daily_open']:
+        #     return "short"
+        if go_short:
             return "short"
 
     def _check_time(self, row):
-        no_trade_hours = self.strategy.get('no-trade-hours') #best so far
+        no_trade_hours = self.strategy.get('no-trade-hours')
         hour = datetime.fromtimestamp(row.name).hour
         return not hour in no_trade_hours
 
     def _check_risk_management(self):
-        return self.account.dailywon < 1 and self.account.dailylost <= 3 and self.account.trade == None
+        return self.account.dailywon < 1 and self.account.dailylost <= 3 and self.account.closed == True and int(time.time()) - self.account.lasttradeclosed > 120
 
     def _get_indis(self):
         indis = self._calc_indis(self.strategy.get('signal'), self.strategy.get('atr'))        

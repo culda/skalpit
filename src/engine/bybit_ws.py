@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import sys
 import time
 import threading
 import asyncio
@@ -28,6 +29,7 @@ class BybitWs():
 
         self.ping_timeout = 10
         self.sleep_time = 5
+        self.ping_interval = 60
     
         self.ws_url = self.ws_url_main if not test else self.ws_url_test        
 
@@ -35,7 +37,7 @@ class BybitWs():
             self.ws_data = {f'trade.{self.symbol}': deque(maxlen=200), 
                 f'instrument_info.100ms.{self.symbol}': {},
                 f'orderBookL2_25.{self.symbol}': pd.DataFrame(),
-                'position': {},
+                'position': deque(maxlen=200),
                 'execution': deque(maxlen=200),
                 'order': deque(maxlen=200),
                 'klines': {
@@ -45,26 +47,37 @@ class BybitWs():
                 }
                 }
 
+            self.auth_confirmed = False
             self._connect()
             
     def _connect(self):
         logger.info("_connect: init WebSocketApp")
 
-        async def listen_forever():
+        async def send_ping(ws):
             while True:
+                if self.auth_confirmed:
+                    await ws.send('{"op":"ping"}')
+                await asyncio.sleep(self.ping_interval)
+
+        async def listen_forever(loop):
+            while True:
+                ping_task = None
                 try:
                     logger.debug("listen_forever: connecting")
                     async with websockets.connect(self.ws_url) as ws:
                         logger.debug("listen_forever: connection established")
                         self._setup_klines()
                         await self._on_open(ws)
+                        if ping_task == None:
+                            ping_task = loop.create_task(send_ping(ws))
                         while True:
                             try:
                                 message = await asyncio.wait_for(ws.recv(), timeout=self.ping_timeout)
                                 await self._on_message(message)
                             except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as err:
-                                print('listen_forever: ws.recv() timeout')
-                                logger.debug(f"listen_forever: ws.recv() timeout, {err}")                                
+                                logger.debug(f"listen_forever: ws.recv() timeout, {err}")
+                                self.auth_confirmed = False
+                                self.callback(topic = "auth", data = {"success": False})
                                 try:
                                     logger.debug('listen_forever: sending ping')
                                     pong = await ws.ping()
@@ -72,10 +85,10 @@ class BybitWs():
                                     logger.debug('listen_forever: Ping OK, keeping connection alive...')
                                     continue
                                 except:
-                                    print('listen_forever: ping timeout')
                                     logger.debug(f"listen_forever: ping timeout, {err}")
                                     await asyncio.sleep(self.sleep_time)
                                     break
+                        
                 except ConnectionRefusedError:
                     logger.error(f"listen_forever: ConnectionRefusedError error, {err}")
                     await asyncio.sleep(self.sleep_time)
@@ -85,20 +98,14 @@ class BybitWs():
                     await asyncio.sleep(self.sleep_time)
                     continue
 
-        async def send_ping():
-            while True:
-                await asyncio.sleep(60)
 
-        # loop = asyncio.new_event_loop()
-        # asyncio.set_event_loop(loop)
-        # try:
-        #     loop.run_until_complete(listen_forever())
-        # finally:
-        #     loop.run_until_complete(loop.shutdown_asyncgens())
-        #     loop.close()
 
-        asyncio.get_event_loop().run_until_complete(listen_forever())
-        print("run_until_complete is done")
+        # tasks = asyncio.gather(listen_forever())
+
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(listen_forever(loop))
+        ping_task.close()
+
         logger.info("_connect: run_until_complete is done")
     
     def _on_error(self):
@@ -126,17 +133,15 @@ class BybitWs():
                                          f'klineV2.1.{self.symbol}',
                                          f'klineV2.15.{self.symbol}',
                                          f'klineV2.60.{self.symbol}',
-                                         ]}))
-        # self.send_ping(websocket)
-
-    def send_ping(self, websocket):
-        websocket.send('{"op":"ping"}')
-        threading.Timer(60, self.send_ping()).start()
+                                         ]}))        
 
     async def _on_message(self, message):
-        logger.debug(f"_on_message: {message}")
+        logger.debug(f"_on_message: {message}")        
         try:
             message = json.loads(message)
+            if message.get('success') and message.get('request', {}).get('op') == 'auth':
+                self.callback(topic = "auth", data = {"success": True})
+                self.auth_confirmed = True
             if message.get('topic'):
                 topic = message.get('topic')
 
@@ -158,6 +163,7 @@ class BybitWs():
             import traceback
             traceback.print_exc()
             logger.error(f"_on_message: {err}")
+            sys.exit()
 
     def _on_ws_execution(self, message):
         self.ws_data['execution'].append(message['data'][0])     
@@ -212,6 +218,7 @@ class BybitWs():
             import traceback
             traceback.print_exc()
             logger.error(f"_on_ws_kline: {e}")
+            sys.exit()
 
 
     def _on_ws_orderbook(self, message):

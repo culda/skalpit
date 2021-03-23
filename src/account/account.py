@@ -14,7 +14,7 @@ class Account():
         }
         
         self.stopped = False
-        self.closed =  False
+        self.closed =  True
         self.lost = False
         self.won = False
         self.even = False
@@ -41,7 +41,6 @@ class Account():
         self.maxdrawdown = 0
 
     def _calc_pnl_xbt( self, side, entry, exit, size ):
-        # contracts = round( size * entry )
         exit1 = 1 / float(exit)
         entry1 = 1 / float(entry)
         return ( exit1 - entry1 ) * size if side == 'short' else ( entry1 - exit1 ) * size 
@@ -56,4 +55,3 @@ class Account():
             return size_risk / abs( entry1 - stop1 )
         else:
             return size_risk / abs( stop1 - entry1 )
-        # return entry * ( size_risk )

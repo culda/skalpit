@@ -315,7 +315,7 @@ class BybitRest():
 if __name__ == '__main__':
 
     bybit = Bybit(api_key='xxxxxxxxx',
-                  secret='yyyyyyyyyyyyyyyyyyy', symbol='BTCUSD', test=True, ws=True)
+                  secret='yyyyyyyyyyyyyyyyyyy', symbol='BTCUSD', test=True, self=True)
 
     position = bybit.get_position()
     print('Position ----------------------------------------------------------')

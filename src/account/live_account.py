@@ -12,33 +12,27 @@ class LiveAccount(Account):
         super().__init__(**kwargs)
         self.orders = {}
 
+        self.lasttradeclosed = 1500000000 #random time in the past
+
     def new_order(self, data):
         logger.debug(f"new_order: {data}")
-        try:
-            oid = data.get('order_id')
-            self.orders[oid] = {
-                'status': 'open',
-                'leaves': data.get('leaves_qty'),
-                'details': data
-            }
-        except Exception as e:
-            logger.error(f"""
-                new_order: {e}
-                new_order: {data}
-                """)        
+        oid = data.get('order_id')
+        self.orders[oid] = data
 
     def position_update(self, data):
         logger.debug(f"position_update: {data}")
         size = data.get('size')
         if size == 0 and not self.trade == None:
-            self._close(data)            
+            self._close(data)
             self.export_position()
             self.trades.append(self.trade)
             self.trade = None
+        else:
+            self.trade = data
         logger.info(f"position_update: balance {self.balance}, daily won {self.dailywon}, dailylost = {self.dailylost}, dailytrades = {self.dailytrades}")
 
     def export_position(self):
-        logger.debug(f"export_position")        
+        logger.debug(f"export_position")
         timestamp = int(time.time())
         try:
             with open(f'trades/trade-{timestamp}', 'w') as outfile:
@@ -47,102 +41,58 @@ class LiveAccount(Account):
                     "orders": dict(self.orders)
                 }, outfile)
         except Exception as e:
-            import traceback
-            traceback.print_exc()
             logger.error(f"""
                 export_position: {e} 
                 export_position: trade: {self.trade}
                 export_position: orders: {self.orders}
-                """)            
-
-
-    def order_executed(self, data):
-        print("order_executed")
-        print(data)
-        try:
-            oid = data.get('order_id')
-            leaves = int(data.get('leaves_qty'))
-
-            if oid in self.orders:
-                logger.info(f"order_executed: order {oid} executed; leaves = {leaves}")
-                self.orders[oid]['leaves'] = leaves
-                if leaves == 0 and self.orders[oid]['status'] == 'open':
-                    logger.info(f"order_executed: order {oid} filled")
-                    self.orders[oid]['status'] = 'filled'
-            else:                
-                logger.info(f"order_executed: new order {oid} executed; leaves = {leaves}")
-                self.orders[oid] = {
-                    'status': 'filled',
-                    'leaves': data.get('leaves_qty'),
-                    'details': data
-                 }
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()            
-            logger.error(f"""
-                order_executed: {e} 
-                order_executed: {data}
                 """)
 
-    def open(self, side, price, stop = None, tp = None, risk = 5, is_maker = False, timestamp = None ):
+    def order_executed(self, data):
+        logger.debug(f"order_executed: {data}")        
+        oid = data.get('order_id')
+        self.orders[oid] = data
 
+    def open(self, risk, price, stop):
         self.dailytrades += 1
+        self.closed = False
+        return int(self._size_by_stop_risk( risk, price, stop ))
 
-        size = self._size_by_stop_risk( risk, price, stop )
-        
-        self.trade = {
-            "side": side,
-            "entry": price,
-            "stop": stop,
-            "tp": tp,
-            "risk": risk,
-            "size": size,
-            "takeprofits": [],
-            "opentimestamp": timestamp,
-            "closetimestamp": None,
-            "result": {},
-            "meta": { "initialstop": stop }
-        }
-
-    def _close(self, data):
-        logger.info(f"_close: active trade: {self.trade}")
-        
+    def _close(self, data):                
         if not self.trade:
             logger.debug("_close: nothing to close")
             return
 
+        self.closed = True
+
         startbal = self.balance
         self.balance = float(data.get('wallet_balance'))
-
-        pnl = startbal - self.balance
-
-        self.trade['pnl'] = pnl
-        self.trade["closetimestamp"] = int(time.time())
-
-        self.closed = True
-        self.won = pnl > 0
-        self.lost = pnl < 0
-        self.even = pnl == 0
+        pnl = self.balance - startbal
+        
+        won = pnl > 0
+        lost = pnl < 0
+        even = pnl == 0
 
         self.maxbalance = max(self.balance, self.maxbalance)
         self.maxdrawdown = min(self.maxdrawdown, percent(self.maxbalance, self.balance))        
 
-        if self.won:
+        if won:
             self.dailywon+=1
             self.totalwon+=1
-        if self.lost: 
+        if lost: 
             self.dailylost+=1
             self.totallost+=1
-        if self.even:
+        if even:
             self.dailyeven+=1
             self.totaleven+=1
 
+        self.lasttradeclosed = int(time.time())
+        self.trade["closetimestamp"] = int(time.time())
         self.trade["result"] = {
-            "profit": pnl,
-            "percent": percent( startbal, self.balance ),
+            "profit": f"{pnl:.8f}",
+            "percent": f"{percent( startbal, self.balance ):.2f}",
             "balance": { "before": startbal, "after": self.balance }
         }
+        logger.info(f"_close: closed {self.trade}")
 
 
     def update( self, timestamp, kline ):
