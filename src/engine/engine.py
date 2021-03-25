@@ -20,18 +20,18 @@ class Engine():
         self.risk = self.strategy.get('risk')
 
     def _check_signal(self, row, signals):
-        # if all([row[s] for s in signals]) and row['Open'] > row['daily_open']:
-        #     return "long"
-        if all([row[s] for s in signals]):
+        go_long = True
+        for s in signals:
+            if row[s] != True:
+                go_long = False
+        if go_long and row['Open'] > row['daily_open']:
             return "long"
 
         go_short = True
         for s in signals:
-            if row[s] == None or row[s] == True:
+            if row[s] != False:
                 go_short = False
-        # if go_short and row['Open'] < row['daily_open']:
-        #     return "short"
-        if go_short:
+        if go_short and row['Open'] < row['daily_open']:
             return "short"
 
     def _check_time(self, row):

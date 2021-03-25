@@ -13,6 +13,7 @@ class LiveAccount(Account):
         self.orders = {}
 
         self.lasttradeclosed = 1500000000 #random time in the past
+        self.lasttradeopened = None
 
     def new_order(self, data):
         logger.debug(f"new_order: {data}")
@@ -22,7 +23,7 @@ class LiveAccount(Account):
     def position_update(self, data):
         logger.debug(f"position_update: {data}")
         size = data.get('size')
-        if size == 0 and not self.trade == None:
+        if size == 0 and not self.trade == None and int(time.time()) - self.lasttradeopened > 5:
             self._close(data)
             self.export_position()
             self.trades.append(self.trade)
@@ -55,6 +56,7 @@ class LiveAccount(Account):
     def open(self, risk, price, stop):
         self.dailytrades += 1
         self.closed = False
+        self.lasttradeopened = int(time.time())
         return int(self._size_by_stop_risk( risk, price, stop ))
 
     def _close(self, data):                

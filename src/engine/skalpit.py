@@ -61,9 +61,11 @@ class Skalpit(Engine):
 
     def _parse_position(self, topic, data):
         size = data.get('size')
-        if size == 0:
+        if size == 0 and not self.account.trade == None and int(time.time()) - self.account.lasttradeopened > 5:
             logger.debug("_parse_position: position is 0, cancelling all orders")
             self.restclient.cancel_active_orders_all()
+        elif size == 0 and not self.account.trade == None and int(time.time()) - self.account.lasttradeopened <= 5:
+            logger.debug("_parse_position: position is 0 too soon, ignoring...")
         self.account.position_update(data)
 
     def _parse_kline(self, topic, data):
@@ -91,6 +93,7 @@ class Skalpit(Engine):
                     size = self.account.open(self.risk, row['Open'], sl)
                     logger.info(f"LONG {size} @ {row['Open']} - SL {sl} - TP {tp}")
                     self.restclient.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Market", qty = size, stop_loss = sl)
+                    time.sleep(1)
                     self.restclient.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Limit", qty = size, price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
 
                 if signal == "short":
@@ -99,6 +102,7 @@ class Skalpit(Engine):
                     size = self.account.open(self.risk, row['Open'], sl)
                     logger.info(f"SHORT {size} @ {row['Open']} - SL {sl} - TP {tp}")
                     self.restclient.place_active_order(symbol = "BTCUSD", side = "Sell", order_type = "Market", qty = size, stop_loss = sl)
+                    time.sleep(1)
                     self.restclient.place_active_order(symbol = "BTCUSD", side = "Buy", order_type = "Limit", qty = size, price = tp, reduce_only = "True", time_in_force = "GoodTillCancel")
 
             self.account.update(row.name, row)

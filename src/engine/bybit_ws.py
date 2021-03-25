@@ -76,8 +76,6 @@ class BybitWs():
                                 await self._on_message(message)
                             except (asyncio.TimeoutError, websockets.exceptions.ConnectionClosed) as err:
                                 logger.debug(f"listen_forever: ws.recv() timeout, {err}")
-                                self.auth_confirmed = False
-                                self.callback(topic = "auth", data = {"success": False})
                                 try:
                                     logger.debug('listen_forever: sending ping')
                                     pong = await ws.ping()
@@ -85,26 +83,29 @@ class BybitWs():
                                     logger.debug('listen_forever: Ping OK, keeping connection alive...')
                                     continue
                                 except:
+                                    self.auth_confirmed = False
+                                    self.callback(topic = "auth", data = {"success": False})
                                     logger.debug(f"listen_forever: ping timeout, {err}")
                                     await asyncio.sleep(self.sleep_time)
                                     break
                         
                 except ConnectionRefusedError:
                     logger.error(f"listen_forever: ConnectionRefusedError error, {err}")
+                    self.auth_confirmed = False
                     await asyncio.sleep(self.sleep_time)
                     continue
                 except Exception as err:
                     logger.error(f"listen_forever: error, {err}")
+                    self.auth_confirmed = False
                     await asyncio.sleep(self.sleep_time)
                     continue
-
-
 
         # tasks = asyncio.gather(listen_forever())
 
         loop = asyncio.get_event_loop()
         loop.run_until_complete(listen_forever(loop))
-        ping_task.close()
+        for task in asyncio.Task.all_tasks():
+            task.cancel()
 
         logger.info("_connect: run_until_complete is done")
     
